@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  eurekaserver:
+    image: eurekaserver-image
+    container_name: eurekaserver
+    build:
+      context: ./eurekaserver
+    ports:
+      - "8761:8761"
+    networks:
+      - app-network
+
+  dep-filial-service:
+    image: dep-filial-service-image
+    container_name: dep-filial-service
+    build:
+      context: ./dep-filial-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysqldepfilialservice:3306/depfilialdb?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 1313
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eurekaserver:8761/eureka
+    depends_on:
+      - mysqldepfilialservice
+      - eurekaserver
+    networks:
+      - app-network
+
+  mysqldepfilialservice:
+    image: mysql:8.0
+    container_name: SQLdepfilialservice
+    environment:
+      MYSQL_ROOT_PASSWORD: 1313
+      MYSQL_DATABASE: depfilialdb
+    ports:
+      - "3307:3306"
+    networks:
+      - app-network
+
+  user-service:
+    image: user-service-image
+    container_name: user-service
+    build:
+      context: ./user-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysqluserdb:3306/userdb?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 1313
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eurekaserver:8761/eureka
+    depends_on:
+      - mysqluserdb
+      - eurekaserver
+    networks:
+      - app-network
+
+  mysqluserdb:
+    image: mysql:8.0
+    container_name: SQLuserdb
+    environment:
+      MYSQL_ROOT_PASSWORD: 1313
+      MYSQL_DATABASE: userdb
+    ports:
+      - "3308:3306"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
